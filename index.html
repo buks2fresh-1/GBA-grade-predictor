@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grade Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --surface2: #1e2235;
+      --border: #2a2f45;
+      --text: #c8cde8;
+      --text-dim: #5a6080;
+      --text-bright: #eef0ff;
+      --accent: #6c8cff;
+      --accent-dim: rgba(108,140,255,0.12);
+      --green: #34d175;
+      --green-dim: rgba(52,209,117,0.12);
+      --yellow: #f5c542;
+      --yellow-dim: rgba(245,197,66,0.12);
+      --red: #ff5c5c;
+      --red-dim: rgba(255,92,92,0.12);
+      --orange: #ff9f43;
+      --sans: 'Outfit', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.2rem 4rem;
+    }
+
+    /* bg glow */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,140,255,0.06) 0%, transparent 70%);
+      top: -100px; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .page { width: 100%; max-width: 540px; position: relative; }
+
+    /* ── HEADER ── */
+    header { text-align: center; margin-bottom: 2rem; animation: fadeDown 0.5s ease both; }
+
+    .school-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent-dim);
+      border: 1px solid rgba(108,140,255,0.25);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .school-badge::before { content: '🏫'; font-size: 0.85rem; }
+
+    h1 {
+      font-size: clamp(2rem, 7vw, 2.8rem);
+      font-weight: 800;
+      color: var(--text-bright);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+    h1 span { color: var(--accent); }
+
+    .subtitle { color: var(--text-dim); font-size: 0.88rem; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.6rem;
+      margin-bottom: 1rem;
+      animation: fadeUp 0.45s ease both;
+    }
+    .card:nth-child(2) { animation-delay: 0.05s; }
+    .card:nth-child(3) { animation-delay: 0.1s; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .card-title { font-weight: 700; font-size: 0.95rem; color: var(--text-bright); }
+    .card-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.1rem; }
+
+    /* ── CA INPUTS ── */
+    .ca-list { display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .ca-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.8rem;
+      align-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      transition: border-color 0.2s;
+    }
+    .ca-row:focus-within { border-color: var(--accent); }
+
+    .ca-info { display: flex; flex-direction: column; gap: 0.1rem; }
+    .ca-name { font-weight: 600; font-size: 0.88rem; color: var(--text-bright); }
+    .ca-max { font-size: 0.72rem; color: var(--text-dim); }
+
+    .ca-input-wrap { display: flex; align-items: center; gap: 0.4rem; }
+    .ca-input {
+      width: 70px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      padding: 0.55rem 0.7rem;
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.18s;
+      -moz-appearance: textfield;
+    }
+    .ca-input::-webkit-inner-spin-button,
+    .ca-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .ca-input:focus { border-color: var(--accent); }
+    .ca-input.error { border-color: var(--red); background: var(--red-dim); }
+    .ca-denom { font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); white-space: nowrap; }
+
+    /* CA progress bar */
+    .ca-progress {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .ca-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+    .ca-progress-label span:last-child { color: var(--text-bright); font-weight: 600; font-family: var(--mono); }
+    .progress-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+      background: var(--accent);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── TARGET SECTION ── */
+    .grade-pills {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+    }
+    .grade-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.6rem 0.3rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--surface2);
+      user-select: none;
+    }
+    .grade-pill:hover { border-color: var(--accent); }
+    .grade-pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .pill-letter {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--text-bright);
+      line-height: 1;
+    }
+    .grade-pill.active .pill-letter { color: #fff; }
+    .pill-range {
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      margin-top: 0.2rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .grade-pill.active .pill-range { color: rgba(255,255,255,0.75); }
+
+    /* ── BUTTON ── */
+    .btn-calc {
+      width: 100%;
+      padding: 1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+    }
+    .btn-calc:hover { background: #5577ee; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,140,255,0.25); }
+    .btn-calc:active { transform: translateY(0); }
+
+    .err-msg {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(255,92,92,0.2);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      font-size: 0.8rem;
+      margin-top: 0.8rem;
+      display: none;
+    }
+
+    /* ── RESULT ── */
+    #result { display: none; animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    .result-grade-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .grade-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 80px; height: 80px;
+      border-radius: 16px;
+      font-weight: 800;
+      font-size: 2rem;
+      line-height: 1;
+      flex-shrink: 0;
+      border: 2px solid;
+    }
+    .grade-badge small { font-size: 0.6rem; font-weight: 600; margin-top: 0.2rem; letter-spacing: 0.05em; }
+
+    .result-text { flex: 1; }
+    .result-headline { font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.3rem; }
+    .result-sub { font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* Exam score needed */
+    .exam-needed {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .exam-needed-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 0.4rem; }
+    .exam-score-big {
+      font-family: var(--mono);
+      font-size: 3rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text-bright);
+    }
+    .exam-score-big .denom { font-size: 1.2rem; color: var(--text-dim); }
+    .exam-pct { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+    /* Progress arc for exam */
+    .exam-arc-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0.8rem 0;
+    }
+    #arc-svg { width: 90px; height: 90px; }
+    .arc-bg { fill: none; stroke: var(--border); stroke-width: 6; }
+    .arc-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.7s ease, stroke 0.3s; }
+
+    /* Breakdown */
+    .breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+    .breakdown-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 0.5rem;
+      text-align: center;
+    }
+    .breakdown-val { font-family: var(--mono); font-size: 1.3rem; font-weight: 500; color: var(--text-bright); }
+    .breakdown-lbl { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* Verdict banner */
+    .verdict {
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      margin-top: 1rem;
+      border: 1px solid;
+    }
+    .verdict-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .verdict strong { display: block; font-weight: 700; margin-bottom: 0.1rem; }
+
+    .verdict.good { background: var(--green-dim); border-color: rgba(52,209,117,0.2); color: var(--green); }
+    .verdict.ok   { background: var(--yellow-dim); border-color: rgba(245,197,66,0.2); color: var(--yellow); }
+    .verdict.hard { background: var(--red-dim); border-color: rgba(255,92,92,0.2); color: var(--red); }
+    .verdict.impossible { background: rgba(90,60,200,0.1); border-color: rgba(108,140,255,0.2); color: var(--accent); }
+
+    /* Reset btn */
+    .btn-reset {
+      width: 100%;
+      padding: 0.75rem;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 0.8rem;
+      transition: all 0.18s;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* footer */
+    .page-footer { text-align: center; margin-top: 2rem; font-size: 0.7rem; color: var(--text-dim); }
+
+    /* ANIMATIONS */
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(16px);  } to { opacity:1; transform:translateY(0); } }
+    @keyframes popIn    { from { opacity:0; transform:scale(0.9); }        to { opacity:1; transform:scale(1); } }
+
+    @media (max-width: 420px) {
+      .grade-pills { grid-template-columns: repeat(4, 1fr); }
+      .breakdown { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="school-badge">GBA Grade Predictor</div>
+    <h1>What do you need<br>to <span>score?</span></h1>
+    <p class="subtitle">Enter your CA scores and pick your target grade.</p>
+  </header>
+
+  <!-- CA CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">📝</div>
+      <div>
+        <div class="card-title">Continuous Assessment</div>
+        <div class="card-sub">Total CA = 40 marks</div>
+      </div>
+    </div>
+
+    <div class="ca-list">
+      <div class="ca-row" id="row-ca1">
+        <div class="ca-info">
+          <div class="ca-name">CA 1 <span style="color:var(--text-dim);font-weight:400;font-size:0.8rem">— First Test</span></div>
+          <div class="ca-max">Out of 10 marks</div>
+        </div>
+        <div class="ca-input-wrap">
+          <input type="number" class="ca-input" id="ca1" placeholder="—" min="0" max="10" oninput="liveUpdate()"/>
+          <span class="ca-denom">/ 10</span>
+        </div>
+      </div>
+
+      <div class="ca-row" id="row-ca2">
+        <div class="ca-info">
+          <div class="ca-name">CA 2 <span style="color:var(--text-dim);font-weight:400;font-size:0.8rem">— Second Test</span></div>
+          <div class="ca-max">Out of 20 marks</div>
+        </div>
+        <div class="ca-input-wrap">
+          <input type="number" class="ca-input" id="ca2" placeholder="—" min="0" max="20" oninput="liveUpdate()"/>
+          <span class="ca-denom">/ 20</span>
+        </div>
+      </div>
+
+      <div class="ca-row" id="row-ca3">
+        <div class="ca-info">
+          <div class="ca-name">CA 3 <span style="color:var(--text-dim);font-weight:400;font-size:0.8rem">— Third Test</span></div>
+          <div class="ca-max">Out of 5 marks</div>
+        </div>
+        <div class="ca-input-wrap">
+          <input type="number" class="ca-input" id="ca3" placeholder="—" min="0" max="5" oninput="liveUpdate()"/>
+          <span class="ca-denom">/ 5</span>
+        </div>
+      </div>
+
+      <div class="ca-row" id="row-ca4">
+        <div class="ca-info">
+          <div class="ca-name">CA 4 <span style="color:var(--text-dim);font-weight:400;font-size:0.8rem">— Fourth Test</span></div>
+          <div class="ca-max">Out of 5 marks</div>
+        </div>
+        <div class="ca-input-wrap">
+          <input type="number" class="ca-input" id="ca4" placeholder="—" min="0" max="5" oninput="liveUpdate()"/>
+          <span class="ca-denom">/ 5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live CA total bar -->
+    <div class="ca-progress">
+      <div class="ca-progress-label">
+        <span>CA Total so far</span>
+        <span id="ca-total-live">— / 40</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="ca-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TARGET CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🎯</div>
+      <div>
+        <div class="card-title">Target Grade</div>
+        <div class="card-sub">What grade are you aiming for?</div>
+      </div>
+    </div>
+
+    <div class="grade-pills" id="grade-pills">
+      <div class="grade-pill active" data-grade="A+" data-min="90">
+        <span class="pill-letter">A⁺</span>
+        <span class="pill-range">90–100</span>
+      </div>
+      <div class="grade-pill" data-grade="A" data-min="80">
+        <span class="pill-letter">A</span>
+        <span class="pill-range">80–90</span>
+      </div>
+      <div class="grade-pill" data-grade="B" data-min="70">
+        <span class="pill-letter">B</span>
+        <span class="pill-range">70–80</span>
+      </div>
+      <div class="grade-pill" data-grade="C" data-min="60">
+        <span class="pill-letter">C</span>
+        <span class="pill-range">60–70</span>
+      </div>
+      <div class="grade-pill" data-grade="D" data-min="50">
+        <span class="pill-letter">D</span>
+        <span class="pill-range">50–60</span>
+      </div>
+      <div class="grade-pill" data-grade="E" data-min="40">
+        <span class="pill-letter">E</span>
+        <span class="pill-range">40–50</span>
+      </div>
+      <div class="grade-pill" data-grade="F" data-min="0">
+        <span class="pill-letter">F</span>
+        <span class="pill-range">0–40</span>
+      </div>
+    </div>
+
+    <div class="err-msg" id="err-msg">⚠ Please check your CA scores — make sure none exceed their maximum.</div>
+    <button class="btn-calc" onclick="calculate()">Calculate What I Need →</button>
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="card" id="result">
+    <div class="card-header">
+      <div class="card-icon">✨</div>
+      <div>
+        <div class="card-title">Your Result</div>
+        <div class="card-sub" id="result-subject-label">Based on your CA scores</div>
+      </div>
+    </div>
+
+    <div class="result-grade-row">
+      <div class="grade-badge" id="grade-badge">
+        <span id="badge-letter">A</span>
+        <small id="badge-range">80–90</small>
+      </div>
+      <div class="result-text">
+        <div class="result-headline" id="result-headline">You're targeting an A</div>
+        <div class="result-sub" id="result-sub">Your CA score puts you at <strong id="ca-contrib">—</strong> / 40</div>
+      </div>
+    </div>
+
+    <div class="exam-needed">
+      <div class="exam-needed-label">You need at least this in your Exam</div>
+      <div class="exam-score-big" id="exam-score-big">—<span class="denom">/60</span></div>
+      <div class="exam-pct" id="exam-pct-label"></div>
+    </div>
+
+    <div class="exam-arc-wrap">
+      <svg id="arc-svg" viewBox="0 0 36 36">
+        <circle class="arc-bg" cx="18" cy="18" r="14" transform="rotate(-90 18 18)"/>
+        <circle class="arc-fill" id="arc-fill" cx="18" cy="18" r="14"
+          stroke-dasharray="88" stroke-dashoffset="88" transform="rotate(-90 18 18)"/>
+      </svg>
+    </div>
+
+    <div class="breakdown">
+      <div class="breakdown-item">
+        <div class="breakdown-val" id="br-ca">—</div>
+        <div class="breakdown-lbl">CA Score</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-val" id="br-exam">—</div>
+        <div class="breakdown-lbl">Exam Needed</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-val" id="br-total">—</div>
+        <div class="breakdown-lbl">Min Total</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <span class="verdict-icon" id="verdict-icon"></span>
+      <div><strong id="verdict-title"></strong><span id="verdict-body"></span></div>
+    </div>
+
+    <button class="btn-reset" onclick="resetForm()">← Calculate Again</button>
+  </div>
+
+  <div class="page-footer">Grade Predictor · GBA · SS/JSS</div>
+</div>
+
+<script>
+  // Grade definitions
+  const GRADES = [
+    { grade: 'A+', min: 90, max: 100 },
+    { grade: 'A',  min: 80, max: 90  },
+    { grade: 'B',  min: 70, max: 80  },
+    { grade: 'C',  min: 60, max: 70  },
+    { grade: 'D',  min: 50, max: 60  },
+    { grade: 'E',  min: 40, max: 50  },
+    { grade: 'F',  min: 0,  max: 40  },
+  ];
+
+  const CA_MAX = [10, 20, 5, 5]; // CA1–CA4 max marks
+  let selectedGrade = GRADES[0]; // default A+
+
+  // Grade pill selection
+  document.querySelectorAll('.grade-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.grade-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const g = pill.dataset.grade;
+      selectedGrade = GRADES.find(gr => gr.grade === g);
+    });
+  });
+
+  // Live CA bar update
+  function liveUpdate() {
+    let total = 0, filled = 0;
+    CA_MAX.forEach((max, i) => {
+      const val = parseFloat(document.getElementById(`ca${i+1}`).value);
+      if (!isNaN(val)) { total += Math.min(val, max); filled++; }
+    });
+    const pct = (total / 40) * 100;
+    document.getElementById('ca-bar').style.width = pct + '%';
+    document.getElementById('ca-total-live').textContent = filled > 0 ? `${total} / 40` : '— / 40';
+
+    // Color the bar
+    const bar = document.getElementById('ca-bar');
+    if (pct >= 75) bar.style.background = 'var(--green)';
+    else if (pct >= 50) bar.style.background = 'var(--accent)';
+    else if (pct >= 30) bar.style.background = 'var(--yellow)';
+    else bar.style.background = 'var(--red)';
+  }
+
+  function getCA() {
+    let total = 0;
+    let valid = true;
+    CA_MAX.forEach((max, i) => {
+      const val = parseFloat(document.getElementById(`ca${i+1}`).value);
+      const input = document.getElementById(`ca${i+1}`);
+      input.classList.remove('error');
+      if (!isNaN(val)) {
+        if (val < 0 || val > max) { input.classList.add('error'); valid = false; }
+        else total += val;
+      }
+    });
+    return { total, valid };
+  }
+
+  function calculate() {
+    const errMsg = document.getElementById('err-msg');
+    errMsg.style.display = 'none';
+
+    const { total: caTotal, valid } = getCA();
+    if (!valid) { errMsg.style.display = 'block'; return; }
+
+    // How many CAs were filled
+    const filled = CA_MAX.filter((_, i) => document.getElementById(`ca${i+1}`).value !== '').length;
+    if (filled === 0) {
+      errMsg.textContent = '⚠ Enter at least one CA score to get started.';
+      errMsg.style.display = 'block'; return;
+    }
+
+    const target = selectedGrade.min; // minimum total needed
+    const examNeeded = target - caTotal; // marks needed from exam (out of 60)
+    const examPct = (examNeeded / 60) * 100;
+
+    // Show result
+    const result = document.getElementById('result');
+    result.style.display = 'block';
+
+    // Grade badge colour
+    const badge = document.getElementById('grade-badge');
+    let badgeColor = 'var(--green)';
+    if (target >= 80) badgeColor = 'var(--accent)';
+    if (target >= 90) badgeColor = 'var(--yellow)';
+    badge.style.background = 'rgba(108,140,255,0.1)';
+    badge.style.borderColor = badgeColor;
+    badge.style.color = badgeColor;
+    document.getElementById('badge-letter').textContent = selectedGrade.grade;
+    document.getElementById('badge-range').textContent = `${selectedGrade.min}–${selectedGrade.max === 100 ? '100' : selectedGrade.max}`;
+
+    document.getElementById('result-headline').textContent = `Targeting Grade ${selectedGrade.grade}`;
+    document.getElementById('ca-contrib').textContent = caTotal;
+
+    // Exam score display
+    const examBig = document.getElementById('exam-score-big');
+    const examPctLabel = document.getElementById('exam-pct-label');
+
+    if (examNeeded <= 0) {
+      examBig.innerHTML = `Already set! <span class="denom" style="font-size:1rem">✓</span>`;
+      examPctLabel.textContent = "Your CA alone puts you at or above target.";
+    } else if (examNeeded > 60) {
+      examBig.innerHTML = `<span style="color:var(--red)">${examNeeded}</span><span class="denom">/60</span>`;
+      examPctLabel.textContent = `That's ${Math.round(examPct)}% — not possible. Lower your target.`;
+    } else {
+      examBig.innerHTML = `${examNeeded}<span class="denom">/60</span>`;
+      examPctLabel.textContent = `That's ${Math.round(examPct)}% of the exam`;
+    }
+
+    // Arc
+    const arc = document.getElementById('arc-fill');
+    const pct = Math.min(Math.max(examPct, 0), 100) / 100;
+    arc.style.strokeDashoffset = 88 - pct * 88;
+    if (examNeeded > 60) arc.style.stroke = 'var(--red)';
+    else if (examPct >= 75) arc.style.stroke = 'var(--orange)';
+    else if (examPct >= 50) arc.style.stroke = 'var(--yellow)';
+    else arc.style.stroke = 'var(--green)';
+
+    // Breakdown
+    document.getElementById('br-ca').textContent = `${caTotal}/40`;
+    document.getElementById('br-exam').textContent = examNeeded > 0 ? `${Math.max(examNeeded,0)}/60` : '0/60';
+    document.getElementById('br-total').textContent = `${target}/100`;
+
+    // Verdict
+    const verdict = document.getElementById('verdict');
+    const vIcon   = document.getElementById('verdict-icon');
+    const vTitle  = document.getElementById('verdict-title');
+    const vBody   = document.getElementById('verdict-body');
+    verdict.className = 'verdict';
+
+    if (examNeeded <= 0) {
+      verdict.classList.add('good');
+      vIcon.textContent = '🎉';
+      vTitle.textContent = 'You already qualify!';
+      vBody.textContent = `Your CA score of ${caTotal}/40 is already enough. Just show up for the exam.`;
+    } else if (examNeeded > 60) {
+      verdict.classList.add('impossible');
+      vIcon.textContent = '⚠️';
+      vTitle.textContent = 'Target not reachable from here.';
+      vBody.textContent = `You'd need ${examNeeded}/60 in the exam which exceeds the maximum. Consider a lower target grade.`;
+    } else if (examPct >= 80) {
+      verdict.classList.add('hard');
+      vIcon.textContent = '🔥';
+      vTitle.textContent = 'Tough — but not impossible.';
+      vBody.textContent = `You need ${examNeeded}/60 (${Math.round(examPct)}%) in the exam. Focus hard, revise past questions, and give it everything.`;
+    } else if (examPct >= 55) {
+      verdict.classList.add('ok');
+      vIcon.textContent = '📚';
+      vTitle.textContent = 'Achievable with solid revision.';
+      vBody.textContent = `You need ${examNeeded}/60 (${Math.round(examPct)}%). Stay consistent, cover your weak topics, and you'll get there.`;
+    } else {
+      verdict.classList.add('good');
+      vIcon.textContent = '✅';
+      vTitle.textContent = "You're in a good position!";
+      vBody.textContent = `You only need ${examNeeded}/60 (${Math.round(examPct)}%) in the exam. Keep it up and don't slack off now.`;
+    }
+
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetForm() {
+    document.getElementById('result').style.display = 'none';
+    ['ca1','ca2','ca3','ca4'].forEach(id => {
+      document.getElementById(id).value = '';
+      document.getElementById(id).classList.remove('error');
+    });
+    document.getElementById('ca-bar').style.width = '0%';
+    document.getElementById('ca-total-live').textContent = '— / 40';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
